@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chizgi — virtual 2D/3D doska</title>
+<meta name="description" content="Matematika, fizika va geometriya uchun virtual 2D va 3D chizma doskasi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%234f8cff'/><stop offset='1' stop-color='%238b5cf6'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='%230b1020'/><path d='M12 48 L32 14 L52 48 Z' fill='none' stroke='url(%23g)' stroke-width='5' stroke-linejoin='round'/><circle cx='32' cy='36' r='6' fill='url(%23g)'/></svg>">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 64 64" class="logo"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8cff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><path d="M12 48 L32 14 L52 48 Z" fill="none" stroke="url(#lg)" stroke-width="5" stroke-linejoin="round"/><circle cx="32" cy="36" r="6" fill="url(#lg)"/></svg>
+    <div><b>Chizgi</b><small data-i18n="slogan">Virtual doska</small></div>
+  </div>
+  <nav class="modes">
+    <button class="mode active" data-mode="2d">2D</button>
+    <button class="mode" data-mode="3d">3D</button>
+  </nav>
+  <div class="top-actions">
+    <select id="lang" aria-label="Til">
+      <option value="uz">O‘zbek</option>
+      <option value="ru">Русский</option>
+      <option value="en">English</option>
+    </select>
+    <button id="panelToggle" class="icon-btn" title="Panel">☰</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <!-- ===== 2D ===== -->
+  <section id="view2d" class="view active">
+    <aside class="toolbar" id="tools2d">
+      <button data-tool="pan" data-i18n-title="t_pan">✋</button>
+      <button data-tool="pen" class="active" data-i18n-title="t_pen">✎</button>
+      <button data-tool="line" data-i18n-title="t_line">╱</button>
+      <button data-tool="vector" data-i18n-title="t_vector">➚</button>
+      <button data-tool="rect" data-i18n-title="t_rect">▭</button>
+      <button data-tool="circle" data-i18n-title="t_circle">◯</button>
+      <button data-tool="triangle" data-i18n-title="t_triangle">△</button>
+      <button data-tool="polygon" data-i18n-title="t_polygon">⬠</button>
+      <button data-tool="point" data-i18n-title="t_point">•</button>
+      <button data-tool="angle" data-i18n-title="t_angle">∠</button>
+      <button data-tool="ruler" data-i18n-title="t_ruler">📏</button>
+      <button data-tool="text" data-i18n-title="t_text">T</button>
+      <button data-tool="eraser" data-i18n-title="t_eraser">⌫</button>
+      <hr>
+      <button id="undo2d" data-i18n-title="undo">↶</button>
+      <button id="redo2d" data-i18n-title="redo">↷</button>
+      <button id="clear2d" data-i18n-title="clear">🗑</button>
+      <button id="png2d" data-i18n-title="export">⤓</button>
+    </aside>
+    <div class="stage">
+      <canvas id="canvas2d"></canvas>
+      <div class="hud" id="hud2d"></div>
+      <div class="hint" id="hint2d"></div>
+    </div>
+    <aside class="panel" id="panel2d">
+      <div class="card">
+        <h3 data-i18n="style">Uslub</h3>
+        <div class="row colors" id="colors2d"></div>
+        <label class="row"><span data-i18n="width">Qalinlik</span><input type="range" id="width2d" min="1" max="12" value="3"></label>
+        <label class="row chk"><input type="checkbox" id="fill2d"><span data-i18n="fill">Bo‘yash (to‘ldirish)</span></label>
+        <label class="row chk"><input type="checkbox" id="grid2d" checked><span data-i18n="grid">Koordinata to‘ri</span></label>
+        <label class="row chk"><input type="checkbox" id="snap2d" checked><span data-i18n="snap">To‘rga yopishish</span></label>
+        <label class="row chk"><input type="checkbox" id="measure2d" checked><span data-i18n="measures">O‘lchamlarni ko‘rsatish</span></label>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="functions">Funksiya grafigi</h3>
+        <div class="fn-input">
+          <span class="mono">y =</span>
+          <input id="fnExpr" class="mono" placeholder="sin(x) * 2" value="">
+          <button id="fnAdd" class="btn">+</button>
+        </div>
+        <div class="chips" id="fnExamples">
+          <button>x^2 - 3</button><button>sin(x)</button><button>1/x</button><button>sqrt(x)</button><button>abs(x)-2</button><button>exp(-x^2)*3</button>
+        </div>
+        <ul class="list" id="fnList"></ul>
+        <p class="err" id="fnErr"></p>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="physics">Fizika: gorizontga burchak ostida otish</h3>
+        <label class="row"><span>v₀ <small>(m/s)</small></span><input type="number" id="pV" value="12" step="0.5"></label>
+        <label class="row"><span>α <small>(°)</small></span><input type="number" id="pA" value="50" step="1"></label>
+        <label class="row"><span>g <small>(m/s²)</small></span><input type="number" id="pG" value="9.8" step="0.1"></label>
+        <label class="row"><span>h₀ <small>(m)</small></span><input type="number" id="pH" value="0" step="0.5"></label>
+        <div class="row gap"><button id="pRun" class="btn primary" data-i18n="launch">Otish ▶</button><button id="pClear" class="btn" data-i18n="remove">O‘chirish</button></div>
+        <div class="stats mono" id="pStats"></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ===== 3D ===== -->
+  <section id="view3d" class="view">
+    <aside class="toolbar" id="tools3d">
+      <button data-solid="cube" data-i18n-title="s_cube">⬛</button>
+      <button data-solid="cuboid" data-i18n-title="s_cuboid">▮</button>
+      <button data-solid="sphere" data-i18n-title="s_sphere">●</button>
+      <button data-solid="cylinder" data-i18n-title="s_cylinder">⌭</button>
+      <button data-solid="cone" data-i18n-title="s_cone">▲</button>
+      <button data-solid="pyramid" data-i18n-title="s_pyramid">⟁</button>
+      <button data-solid="prism" data-i18n-title="s_prism">⏢</button>
+      <button data-solid="tetra" data-i18n-title="s_tetra">◭</button>
+      <button data-solid="torus" data-i18n-title="s_torus">◎</button>
+      <hr>
+      <button id="draw3d" data-i18n-title="t_draw3d">✎</button>
+      <button id="reset3d" data-i18n-title="resetView">⟲</button>
+      <button id="clear3d" data-i18n-title="clear">🗑</button>
+      <button id="png3d" data-i18n-title="export">⤓</button>
+    </aside>
+    <div class="stage">
+      <div id="canvas3dWrap"></div>
+      <div class="hint" id="hint3d"></div>
+    </div>
+    <aside class="panel" id="panel3d">
+      <div class="card" id="selCard">
+        <h3 data-i18n="selected">Tanlangan jism</h3>
+        <p class="muted" id="selEmpty" data-i18n="selectHint">Jism qo‘shing yoki ustiga bosing.</p>
+        <div id="selBody" hidden>
+          <div class="sel-title"><b id="selName"></b><button id="selDel" class="btn danger" data-i18n="remove">O‘chirish</button></div>
+          <div id="selParams"></div>
+          <div class="xyz">
+            <label>x<input type="number" step="0.5" id="posX"></label>
+            <label>y<input type="number" step="0.5" id="posY"></label>
+            <label>z<input type="number" step="0.5" id="posZ"></label>
+          </div>
+          <label class="row"><span data-i18n="rotate">Burish</span><input type="range" id="rotZ" min="0" max="360" value="0"></label>
+          <div class="row colors" id="colors3d"></div>
+          <label class="row chk"><input type="checkbox" id="wire3d"><span data-i18n="wire">Karkas (faqat qirralar)</span></label>
+          <label class="row"><span data-i18n="opacity">Shaffoflik</span><input type="range" id="op3d" min="10" max="100" value="85"></label>
+          <div class="stats mono" id="selStats"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="vectors">Vektorlar</h3>
+        <div class="xyz">
+          <label>x<input type="number" id="vX" value="3"></label>
+          <label>y<input type="number" id="vY" value="2"></label>
+          <label>z<input type="number" id="vZ" value="4"></label>
+        </div>
+        <div class="row gap"><button id="vAdd" class="btn primary" data-i18n="addVector">Vektor qo‘shish</button><button id="vSum" class="btn" data-i18n="sum">Yig‘indi</button></div>
+        <ul class="list" id="vList"></ul>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="surface">Sirt: z = f(x, y)</h3>
+        <div class="fn-input"><span class="mono">z =</span><input id="sExpr" class="mono" value="sin(x)*cos(y)"><button id="sAdd" class="btn">+</button></div>
+        <div class="chips" id="sExamples"><button>sin(x)*cos(y)</button><button>(x^2 - y^2)/6</button><button>(x^2 + y^2)/5</button><button>3*exp(-(x^2+y^2)/4)</button></div>
+        <p class="err" id="sErr"></p>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="scene">Sahna</h3>
+        <ul class="list" id="objList"></ul>
+        <label class="row chk"><input type="checkbox" id="grid3d" checked><span data-i18n="grid">Koordinata to‘ri</span></label>
+        <label class="row chk"><input type="checkbox" id="spin3d"><span data-i18n="autoRotate">Avto aylanish</span></label>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/mathexpr.js"></script>
+<script src="js/board2d.js"></script>
+<script src="js/scene3d.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
