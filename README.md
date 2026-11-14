@@ -2,7 +2,7 @@
 
 Matematika, fizika va geometriya darslari uchun brauzerda ishlaydigan interaktiv chizma doskasi. O‘rnatish shart emas — `index.html` ni oching yoki GitHub Pages orqali foydalaning.
 
-**Demo:** https://najmiddinovanihona-hub.github.io/chizgi/
+**Demo:** https://najmiddinovanihona-hub.github.io/3dDoska-/
 
 ## 2D rejim
 - Qalam, kesma, vektor, to‘rtburchak, aylana, uchburchak, ko‘pburchak, nuqta, matn, o‘chirg‘ich
