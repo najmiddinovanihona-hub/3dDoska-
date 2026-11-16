@@ -8,7 +8,7 @@
     canvas: null, ctx: null, w: 0, h: 0, dpr: 1,
     view: { scale: 40, ox: 0, oy: 0 },
     shapes: [], undoS: [], redoS: [], anims: [],
-    tool: 'pen', color: '#ffffff', width: 3, auto: true, grid: false, measures: false,
+    tool: 'pen', color: '#ffffff', width: 3, auto: true, grid: false, measures: false, mode3d: false, onPick: () => {},
     stroke: null, drag: null, uid: 1, animating: false, onChange: () => {},
 
     init(canvas) {
@@ -27,6 +27,7 @@
       const pw = this.w, ph = this.h;
       this.dpr = window.devicePixelRatio || 1; this.w = r.width; this.h = r.height;
       this.canvas.width = r.width * this.dpr; this.canvas.height = r.height * this.dpr;
+      if (window.Solid3D && Solid3D.renderer) Solid3D.resize(r.width, r.height, this.dpr);
       if (first || !pw) { this.view.ox = this.w / 2; this.view.oy = this.h / 2; }
       else { this.view.ox += (this.w - pw) / 2; this.view.oy += (this.h - ph) / 2; }
       this.render();
@@ -49,6 +50,10 @@
       if (e.button === 1 || e.button === 2 || this.tool === 'hand') {
         this.drag = { pan: true, sx: sp[0], sy: sp[1], ox: this.view.ox, oy: this.view.oy }; return;
       }
+      const hid = window.Solid3D ? Solid3D.hit(this, sp) : null;
+      if (hid !== null && this.tool === 'eraser') { this.snapshot(); this.shapes = this.shapes.filter(s => s.id !== hid); this.onPick(null); this.changed(); return; }
+      if (hid !== null) { const s = this.shapes.find(x => x.id === hid); this.drag = { rot: true, s, sx: sp[0], sy: sp[1], rx: s.d3.rx, ry: s.d3.ry, moved: false }; return; }
+      this.onPick(null);
       if (this.tool === 'eraser') { this.drag = { erase: true, snap: false }; this.eraseAt(sp); return; }
       this.stroke = { pts: [sp] }; this.drag = { draw: true };
     },
@@ -57,6 +62,12 @@
       const sp = this.sp(e);
       if (this.drag.pan) { this.view.ox = this.drag.ox + sp[0] - this.drag.sx; this.view.oy = this.drag.oy + sp[1] - this.drag.sy; this.render(); return; }
       if (this.drag.erase) { this.eraseAt(sp); return; }
+      if (this.drag.rot) {
+        const dx = sp[0] - this.drag.sx, dy = sp[1] - this.drag.sy;
+        if (!this.drag.moved && Math.hypot(dx, dy) > 4) { this.drag.moved = true; this.snapshot(); }
+        if (this.drag.moved) { this.drag.s.d3.ry = this.drag.ry + dx * 0.012; this.drag.s.d3.rx = this.drag.rx + dy * 0.012; this.render(); }
+        return;
+      }
       if (this.stroke) {
         const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
         for (const ev of evs) { const q = this.sp(ev), l = this.stroke.pts[this.stroke.pts.length - 1]; if (dist(q, l) > 1) this.stroke.pts.push(q); }
@@ -66,6 +77,11 @@
     onUp() {
       if (!this.drag) return;
       if (this.drag.draw && this.stroke) this.finishStroke(this.stroke.pts);
+      if (this.drag.rot) {
+        const s = this.drag.s;
+        if (!this.drag.moved) { this.snapshot(); s.d3.form = (s.d3.form + 1) % Solid3D.formsFor(s).length; this.applyRot(s); }
+        this.drag = null; this.changed(); this.onPick(s.id); return;
+      }
       this.stroke = null; this.drag = null; this.render();
     },
     onWheel(e) {
@@ -84,9 +100,18 @@
       s = this.toWorldShape(s);
       if (this.auto) this.snapToVertices(s);
       Object.assign(s, { id: this.uid++, color: this.color, width: this.width });
+      if (this.mode3d && Solid3D.convertible(s)) this.make3d(s);
       this.snapshot(); this.shapes.push(s);
       if (this.auto) { this.anims.push({ id: s.id, raw: sp.map(q => this.toWorld(q)), t0: performance.now(), name: s.name }); this.loop(); }
       this.changed();
+    },
+    make3d(s) { s.d3 = { form: 0, rx: 0, ry: 0 }; this.applyRot(s); },
+    applyRot(s) { const r = Solid3D.defaultRot(s, Solid3D.formsFor(s)[s.d3.form]); s.d3.rx = r[0]; s.d3.ry = r[1]; },
+    set3d(on) {
+      this.mode3d = on;
+      const targets = this.shapes.filter(s => Solid3D.convertible(s) && (on ? !s.d3 : s.d3));
+      if (targets.length) { this.snapshot(); targets.forEach(s => { if (on) this.make3d(s); else delete s.d3; }); }
+      this.onPick(null); this.changed();
     },
     toWorldShape(s) {
       const W = q => this.toWorld(q), k = 1 / this.view.scale, o = { ...s };
@@ -159,13 +184,25 @@
           const tt = Math.min(1, (now - an.t0) / 260); k = 1 - Math.pow(1 - tt, 3);
           if (k < 1) this.drawRaw(an.raw, s.color, s.width, 1 - k);
         }
-        c.globalAlpha = k; this.drawShape(s); c.globalAlpha = 1;
+        if (!s.d3) { c.globalAlpha = k; this.drawShape(s); c.globalAlpha = 1; }
         if (an) this.drawBadge(s, an, now);
+      }
+      if (window.Solid3D && Solid3D.renderer) {
+        const busy = Solid3D.sync(this);
+        if (this.measures) for (const s of this.shapes) if (s.d3) this.solidLabel(s);
+        if (busy && !this._raf) this._raf = requestAnimationFrame(() => { this._raf = 0; this.render(); });
       }
       if (this.stroke) {
         c.strokeStyle = this.color; c.lineWidth = this.width; c.lineCap = c.lineJoin = 'round'; c.beginPath();
         this.stroke.pts.forEach((q, i) => i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1])); c.stroke();
       }
+    },
+    solidLabel(s) {
+      const o = Solid3D.info(s.id), b = Solid3D.bottomOf(s.id); if (!o || !b) return;
+      const p = this.toScreen(b), st = o.stats, parts = [];
+      if (st.V !== undefined) parts.push('V = ' + fmt(st.V));
+      if (st.S !== undefined) parts.push('S = ' + fmt(st.S));
+      this.label(parts.join('   '), p[0], p[1] + 22, '#facc15');
     },
     drawRaw(pts, color, w, alpha) {
       const c = this.ctx; c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = w; c.lineCap = c.lineJoin = 'round'; c.beginPath();
@@ -266,6 +303,7 @@
     exportPNG() {
       const tmp = document.createElement('canvas'); tmp.width = this.canvas.width; tmp.height = this.canvas.height;
       const x = tmp.getContext('2d'); x.fillStyle = '#070b17'; x.fillRect(0, 0, tmp.width, tmp.height); x.drawImage(this.canvas, 0, 0);
+      if (window.Solid3D && Solid3D.renderer) Solid3D.exportOver(x, tmp.width, tmp.height);
       download(tmp.toDataURL('image/png'), 'chizgi.png');
     }
   };

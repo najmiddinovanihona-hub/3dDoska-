@@ -9,14 +9,16 @@ Qo‘lda chizilgan chiziq quyidagilardan biriga aylanadi:
 kesma · siniq chiziq · yoy · aylana · ellips · uchburchak · kvadrat · to‘g‘ri to‘rtburchak · muntazam ko‘pburchak · silliq egri chiziq · nuqta.
 Deyarli gorizontal/vertikal chiziqlar tekislanadi, uchlar mavjud nuqtalarga yopishadi. ✨ tugmasi bilan erkin chizishga o‘tish mumkin.
 
-## 3D ga o‘tkazish
-| 2D shakl | 3D jism (bosib almashtiriladi) |
+## 3D — doskaning o‘zida
+O‘ng yuqoridagi **3D** tugmasi yoqilsa, yopiq shakllar alohida oynada emas, **chizilgan joyining o‘zida** 3D jismga aylanadi (yangi chizilganlari ham). Jismlar darslikdagidek chiziladi: ko‘rinadigan qirralar uzluksiz, orqadagilari punktir.
+Jismni tortib aylantirasiz, bosganda shakli almashadi:
+
+| 2D shakl | 3D jism |
 |---|---|
 | Aylana | shar → silindr → konus |
 | Ellips | ellipsoid → silindr → konus |
 | Kvadrat / to‘rtburchak | kub / parallelepiped → piramida |
 | Uchburchak, ko‘pburchak | prizma → piramida |
-| Kesma, egri chiziq | sterjen → sirt (devor) |
 
 Har bir jism uchun hajm, sirt yuzi va balandlik ko‘rsatiladi.
 

@@ -13,7 +13,6 @@
 <body>
 <div id="stage">
   <canvas id="board"></canvas>
-  <div id="view3d" hidden></div>
 
   <div class="empty" id="emptyHint">
     <svg viewBox="0 0 120 60" class="empty-art"><path d="M8 50 C 20 10, 40 12, 50 40 S 80 58, 112 12" fill="none" stroke="#4f8cff" stroke-width="3" stroke-linecap="round" stroke-dasharray="4 7" opacity=".7"/><path d="M60 52 L76 22 L92 52 Z" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-linejoin="round"/></svg>
@@ -28,7 +27,7 @@
 
   <div class="top-right">
     <select id="lang" aria-label="Til"><option value="uz">UZ</option><option value="ru">RU</option><option value="en">EN</option></select>
-    <button id="toggle3d" class="btn3d"><span class="cube">⬢</span><span id="toggle3dText" data-i18n="to3d">3D ga o‘tkazish</span></button>
+    <button id="toggle3d" class="btn3d" data-i18n-title="t_3d"><span class="cube">⬢</span><span data-i18n="to3d">3D</span><i class="pill" id="pill3d">OFF</i></button>
   </div>
 
   <nav class="dock" id="dock2d">
@@ -50,11 +49,6 @@
     <button id="png" data-i18n-title="export">⤓</button>
   </nav>
 
-  <nav class="dock" id="dock3d" hidden>
-    <button id="reset3d" data-i18n-title="resetView">⟲</button>
-    <button id="spin3d" class="toggle" data-i18n-title="autoRotate">↻</button>
-    <button id="png3d" data-i18n-title="export">⤓</button>
-  </nav>
 
   <div class="info3d" id="info3d" hidden></div>
   <div class="toast" id="toast"></div>
@@ -65,7 +59,7 @@
 <script src="js/i18n.js"></script>
 <script src="js/recognize.js"></script>
 <script src="js/board.js"></script>
-<script src="js/view3d.js"></script>
+<script src="js/solid3d.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

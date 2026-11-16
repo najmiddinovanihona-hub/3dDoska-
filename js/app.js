@@ -2,8 +2,8 @@
 (function () {
   const $ = id => document.getElementById(id), t = k => I18N.t(k);
   const fmt = n => (+(+n).toFixed(3)).toString();
-  const B = Board, V = View3D;
-  let is3d = false, toastTimer = null;
+  const B = Board;
+  let toastTimer = null;
 
   B.init($('board'));
   B.onChange = () => { $('emptyHint').classList.toggle('gone', B.shapes.length > 0); };
@@ -43,55 +43,38 @@
   $('measureBtn').addEventListener('click', () => { B.measures = !B.measures; $('measureBtn').classList.toggle('on', B.measures); B.render(); });
   $('png').addEventListener('click', () => B.exportPNG());
 
-  // ---- 3D ----
-  $('toggle3d').addEventListener('click', () => set3d(!is3d));
-  function set3d(on) {
-    if (on && !B.shapes.length) { toast(t('empty3d')); return; }
-    is3d = on;
-    if (on && !V.inited) {
-      V.init($('view3d'));
-      V.onSelect = showInfo;
-    }
-    $('view3d').hidden = !on; $('board').hidden = on;
-    $('dock2d').hidden = on; $('dock3d').hidden = !on;
-    $('toggle3d').classList.toggle('back', on);
-    $('toggle3dText').dataset.i18n = on ? 'to2d' : 'to3d'; $('toggle3dText').textContent = t($('toggle3dText').dataset.i18n);
-    $('toggle3d').querySelector('.cube').textContent = on ? '←' : '⬢';
-    $('emptyHint').classList.toggle('gone', on || B.shapes.length > 0);
-    V.visible = on;
-    if (on) { requestAnimationFrame(() => { V.resize(); V.build(B.shapes); }); toast(t('hint3d')); }
-    else { $('info3d').hidden = true; requestAnimationFrame(() => B.resize()); }
-  }
-  function formLabel(o) {
-    const s = o.s;
+  // ---- 3D (doskaning o‘zida) ----
+  Solid3D.init($('stage'));
+  B.resize();
+  $('toggle3d').addEventListener('click', () => {
+    B.set3d(!B.mode3d);
+    $('toggle3d').classList.toggle('on', B.mode3d); $('pill3d').textContent = B.mode3d ? 'ON' : 'OFF';
+    toast(t(B.mode3d ? 'on3d' : 'off3d'));
+  });
+  function formLabel(o, s) {
     if (o.form === 'prism' && s.name === 'square') return t('f_cube');
     if (o.form === 'prism' && s.name === 'rect') return t('f_cuboid');
     return t('f_' + o.form);
   }
-  function showInfo(o) {
-    const el = $('info3d');
-    if (!o) { el.hidden = true; return; }
-    const st = o.stats; let rows = [];
+  B.onPick = id => {
+    const el = $('info3d'), s = B.shapes.find(x => x.id === id), o = id !== null && Solid3D.info(id);
+    if (!s || !o) { el.hidden = true; return; }
+    const st = o.stats, rows = [];
     if (st.V !== undefined) rows.push(`${t('volume')}: V = ${fmt(st.V)}`);
     if (st.S !== undefined) rows.push(`${t('area')}: S = ${fmt(st.S)}`);
+    if (st.r !== undefined) rows.push(`r = ${fmt(st.r)}`);
     if (st.h !== undefined) rows.push(`${t('height')}: h = ${fmt(st.h)}`);
-    if (st.L !== undefined) rows.push(`${t('length')}: L = ${fmt(st.L)}`);
-    if (st.A !== undefined) rows.push(`${t('wallArea')}: ${fmt(st.A)}`);
-    const n = V.formsFor(o.s).length;
-    el.innerHTML = `<b>${t('n_' + o.s.name)} → ${formLabel(o)}</b><br><span class="mono">${rows.join('<br>')}</span>${n > 1 ? `<br><small>${t('again')} (${o.s.form3d + 1}/${n})</small>` : ''}`;
+    const n = Solid3D.formsFor(s).length;
+    el.innerHTML = `<b>${t('n_' + s.name)} → ${formLabel(o, s)}</b><br><span class="mono">${rows.join('<br>')}</span><br><small>${t('hint3d')}${n > 1 ? ` (${s.d3.form + 1}/${n})` : ''}</small>`;
     el.hidden = false;
-  }
-  $('reset3d').addEventListener('click', () => V.resetView());
-  $('spin3d').addEventListener('click', () => { V.controls.autoRotate = !V.controls.autoRotate; $('spin3d').classList.toggle('on', V.controls.autoRotate); });
-  $('png3d').addEventListener('click', () => V.exportPNG());
+  };
 
   // ---- klaviatura ----
   window.addEventListener('keydown', e => {
     if (e.target.tagName === 'SELECT') return;
     const k = e.key.toLowerCase();
-    if (!is3d && (e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); e.shiftKey ? B.redo() : B.undo(); }
-    else if (!is3d && (e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); B.redo(); }
-    else if (e.key === 'Escape' && is3d) set3d(false);
+    if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); e.shiftKey ? B.redo() : B.undo(); }
+    else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); B.redo(); }
   });
 
   function toast(msg) {
@@ -99,6 +82,6 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
   }
 
-  I18N.onChange(() => { if (is3d && V.selected) showInfo(V.selected); B.render(); });
+  I18N.onChange(() => { $('info3d').hidden = true; B.render(); });
   I18N.apply();
 })();

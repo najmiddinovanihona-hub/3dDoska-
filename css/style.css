@@ -9,8 +9,8 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-famil
 button,select{font:inherit;color:inherit}
 
 #stage{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 35%,#0f1836,#070b17 72%)}
-#board,#view3d,#view3d canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
-#view3d[hidden],#board[hidden]{display:none}
+#board,#solids{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#solids{pointer-events:none}
 
 .empty{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;transition:opacity .5s;padding:0 16px;width:100%;max-width:520px}
 .empty.gone{opacity:0;visibility:hidden}
@@ -27,7 +27,9 @@ select{background:#0d1428cc;border:1px solid var(--line);border-radius:10px;padd
 .btn3d{display:flex;align-items:center;gap:8px;border:0;border-radius:12px;padding:9px 16px;background:var(--grad);color:#fff;font-weight:600;cursor:pointer;box-shadow:0 6px 24px #4f8cff55;transition:transform .15s,box-shadow .15s}
 .btn3d:hover{transform:translateY(-1px);box-shadow:0 8px 30px #8b5cf677}
 .btn3d .cube{font-size:1.05rem;line-height:1}
-.btn3d.back{background:#16204a;box-shadow:none;border:1px solid var(--line2)}
+.btn3d:not(.on){background:#16204a;box-shadow:none;border:1px solid var(--line2)}
+.btn3d .pill{font-style:normal;font-size:.68rem;font-family:var(--mono);padding:2px 6px;border-radius:6px;background:#ffffff22}
+.btn3d.on .pill{background:#ffffff40}
 
 .dock{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:6px;
   background:#0d1428e6;backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px #0009;
@@ -46,7 +48,7 @@ select{background:#0d1428cc;border:1px solid var(--line);border-radius:10px;padd
 .wbtn i{display:block;border-radius:50%;background:var(--text)}
 .wbtn.active{background:#4f8cff33!important;box-shadow:none!important}
 
-.info3d{position:absolute;left:16px;bottom:84px;max-width:min(340px,calc(100% - 32px));background:#0d1428e6;backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:.88rem;line-height:1.6}
+.info3d{position:absolute;left:16px;bottom:84px;pointer-events:none;max-width:min(340px,calc(100% - 32px));background:#0d1428e6;backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:.88rem;line-height:1.6}
 .info3d[hidden]{display:none}
 .info3d b{font-weight:600}
 .info3d .mono{font-family:var(--mono);font-size:.8rem;color:#b9c4ee}
